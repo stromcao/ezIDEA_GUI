@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QApplication, QWidget
+import os
+from PySide6.QtWidgets import QApplication, QWidget, QFileDialog
 from PySide6.QtGui import QTextCursor, QTextCharFormat, QColor
 from PySide6.QtUiTools import QUiLoader
 
@@ -7,62 +8,53 @@ class Stats:
 
         self.ui = QUiLoader().load('ui/GUI.ui')
 
+        # 记录上传文件的路径
+        self.uploaded_file_path = None
+        # 用来保存临时文件路径
+        self.temp_file_name = None
+
+        self.ui.UploadButton.clicked.connect(self.open_file_dialog)
         self.ui.ReviewButton.clicked.connect(self.review)
         self.ui.ModifyButton.clicked.connect(self.modify)
 
+    def open_file_dialog(self):
+        # 打开文件选择对话框，设置 options=None 来避免不兼容参数问题
+        file_path, _ = QFileDialog.getOpenFileName(None, "Select Python File", "C:\\Users\\Luna\\PycharmProjects", "Python Files (*.py)")
+        if file_path:
+            self.uploaded_file_path = file_path  # 保存上传的文件路径
+            # 读取选中的文件内容并显示在 SourceText 中
+            with open(file_path, 'r', encoding='utf-8') as file:
+                code = file.read()
+                self.ui.SourceText.setPlainText(code)  # 将代码显示在 SourceText 中
+
     def review(self):
-        # 从 SourceText 读取内容
-        source_text = self.ui.SourceText.toPlainText()
-        lines = source_text.split('\n')
+        # 获取用户输入的代码
+        code = self.ui.SourceText.toPlainText()
 
-        # 清空 ReviewText
-        self.ui.ReviewText.clear()
+        # 如果有上传的文件路径，使用该路径；否则创建临时文件
+        if self.uploaded_file_path:
+            file_path_to_review = self.uploaded_file_path
+        else:
+            # 创建临时文件名
+            temp_file_name = "temp_script.py"  # 可以根据需要动态生成唯一文件名
 
-        cursor = self.ui.ReviewText.textCursor()
+            # 将代码写入临时文件
+            with open(temp_file_name, 'w', encoding='utf-8') as temp_file:
+                temp_file.write(code)  # 写入代码
 
-        # 遍历行并插入到 ReviewText 中
-        for i, line in enumerate(lines):
-            if i == 1:  # 第二行
-                char_format = QTextCharFormat()
-                char_format.setForeground(QColor('red'))  # 设置红色
-                cursor.setCharFormat(char_format)
-                cursor.insertText(line + '\n')  # 插入第二行并设置为红色
-                cursor.setCharFormat(QTextCharFormat())  # 恢复默认格式
-            else:
-                cursor.insertText(line + '\n')  # 插入其他行
+            file_path_to_review = temp_file_name  # 使用临时文件的路径
+
+        # 调用 review 函数并传递文件路径
+        self.process_review(file_path_to_review)
+
+    def process_review(self, file_path):
+        # 这里处理传入的 Python 文件路径
+        print(f"Reviewing file: {file_path}")
 
     def modify(self):
         info = self.ui.SourceText.toPlainText()
         self.insertPlainText(info)
         print(info)
-
-    def highlight_second_line(self):
-        # 获取 SourceText 的内容
-        source_text = self.sourceText.toPlainText()
-        lines = source_text.split('\n')
-
-        if len(lines) >= 2:
-            second_line = lines[1]  # 获取第二行
-
-            # 清空 ReviewText
-            self.reviewText.clear()
-
-            # 使用 QTextCursor 和 QTextCharFormat 在 ReviewText 中标记第二行为红色
-            cursor = self.reviewText.textCursor()
-            cursor.insertText(lines[0] + '\n')  # 插入第一行
-
-            # 设置红色格式
-            char_format = QTextCharFormat()
-            char_format.setForeground(QColor('red'))
-
-            cursor.setCharFormat(char_format)
-            cursor.insertText(second_line + '\n')  # 插入第二行并设置为红色
-
-            # 恢复默认格式
-            cursor.setCharFormat(QTextCharFormat())
-            if len(lines) > 2:
-                cursor.insertText('\n'.join(lines[2:]))  # 插入后面的行
-
 
 app = QApplication([])
 stats = Stats()
