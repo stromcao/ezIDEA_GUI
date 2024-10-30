@@ -1,4 +1,6 @@
 import os
+import json
+import json_return as jr
 from PySide6.QtWidgets import QApplication, QWidget, QFileDialog
 from PySide6.QtGui import QTextCursor, QTextCharFormat, QColor
 from PySide6.QtUiTools import QUiLoader
@@ -50,10 +52,43 @@ class Stats:
     def process_review(self, file_path):
         # 这里处理传入的 Python 文件路径
         print(f"Reviewing file: {file_path}")
+        jr.handle_uploaded_file(file_path)
+        # 读取生成的 `temp_script_result.json` 文件
+        with open("temp_script_result.json", "r", encoding="utf-8") as json_file:
+            result_data = json.load(json_file)
+
+        # 获取 SourceText 内容并按行分割
+        source_lines = self.ui.SourceText.toPlainText().splitlines()
+        error_lines = [error["error_line"] for error in result_data["Error(s)"]]
+
+        # 清空 ReviewText 并按行写入内容，同时标记 error_line
+        self.ui.ReviewText.clear()
+        for line_number, line_content in enumerate(source_lines, start=1):
+            cursor = self.ui.ReviewText.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            # 设置文本格式为默认黑色或错误行的红色
+            line_format = QTextCharFormat()
+            if line_number in error_lines:
+                line_format.setForeground(QColor("red"))
+            else:
+                line_format.setForeground(QColor("black"))
+
+            # 插入行内容并应用颜色格式
+            cursor.insertText(line_content.rstrip() + '\n', line_format)
+
+            # 将光标设置为文本的末尾
+            self.ui.ReviewText.setTextCursor(cursor)
+
+    def append_colored_line(self, text_edit, text, color_format):
+        # 创建光标并插入有颜色的文本行
+        cursor = text_edit.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(text + '\n', color_format)
+        text_edit.setTextCursor(cursor)
 
     def modify(self):
         info = self.ui.SourceText.toPlainText()
-        self.insertPlainText(info)
+        self.insertText(info)
         print(info)
 
 app = QApplication([])
