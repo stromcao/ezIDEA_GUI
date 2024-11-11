@@ -23,7 +23,6 @@ def handle_uploaded_file(file_path):
     if allowed_file(file_path):
         process_file_out(file_path)
         result_filename = process_report(file_path)
-        #print(result_filename)
         return result_filename
     else:
         raise ValueError("File type not allowed")

@@ -1,4 +1,4 @@
-from pylint.lint import Run
+from pylint.lint import Run, pylinter
 from pylint.reporters.text import TextReporter
 import re, os
 import json
@@ -83,6 +83,7 @@ def process_file_out(filename):
     参数:
     - filename: 待处理的文件名
     """
+    pylinter.MANAGER.clear_cache()
     report_filename = f"{os.path.splitext(filename)[0]}_report.txt"
     with open(report_filename, "w") as f:
         reporter = TextReporter(f)
@@ -101,6 +102,7 @@ def process_report(filename):
     report_filename = f"{os.path.splitext(filename)[0]}_report.txt"
     with open(report_filename, 'r', encoding='utf-8') as file:
         output = file.read()
+
 
     # 解析输出
     parsed_results = parse_pylint_output(output)
